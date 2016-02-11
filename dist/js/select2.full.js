@@ -1322,6 +1322,10 @@ S2.define('select2/selection/base',[
       self.trigger('blur', evt);
     });
 
+            this.$selection.on('keypress', function(evt) {
+                self.trigger('actualKeypress', evt);
+            });
+
     this.$selection.on('keydown', function (evt) {
       self.trigger('keypress', evt);
 
@@ -4052,21 +4056,29 @@ S2.define('select2/dropdown/attachBody',[
     container.bottom = offset.top + container.height;
 
     var dropdown = {
-      height: this.$dropdown.outerHeight(false)
+      height: this.$dropdown.outerHeight(false),
+      width: this.$dropdown.outerWidth(false)
     };
 
     var viewport = {
       top: $window.scrollTop(),
-      bottom: $window.scrollTop() + $window.height()
+      bottom: $window.scrollTop() + $window.height(),
+      right: $window.width()
     };
 
     var enoughRoomAbove = viewport.top < (offset.top - dropdown.height);
     var enoughRoomBelow = viewport.bottom > (offset.bottom + dropdown.height);
 
+    var enoughRoomRight = viewport.right > (offset.left + dropdown.width);
+
     var css = {
       left: offset.left,
       top: container.bottom
     };
+
+    if (!enoughRoomRight) {
+      css.left = offset.left + this.$container.outerWidth(false) - dropdown.width
+    }
 
     if (!isCurrentlyAbove && !isCurrentlyBelow) {
       newDirection = 'below';
@@ -4248,7 +4260,7 @@ S2.define('select2/i18n/en',[],function () {
       return message;
     },
     loadingMore: function () {
-      return 'Loading more results…';
+                        return 'Loading more results';
     },
     maximumSelected: function (args) {
       var message = 'You can only select ' + args.maximum + ' item';
@@ -4263,7 +4275,7 @@ S2.define('select2/i18n/en',[],function () {
       return 'No results found';
     },
     searching: function () {
-      return 'Searching…';
+                        return 'Searching';
     }
   };
 });
@@ -4897,8 +4909,8 @@ S2.define('select2/core',[
   Select2.prototype._placeContainer = function ($container) {
     $container.insertAfter(this.$element);
 
-    var width = this._resolveWidth(this.$element, this.options.get('width'));
-
+                    //var width = this._resolveWidth(this.$element, this.options.get('width'));
+                        var width = null;
     if (width != null) {
       $container.css('width', width);
     }
@@ -5084,13 +5096,32 @@ S2.define('select2/core',[
       });
     });
 
+    this.on('actualKeypress', function (evt) {
+
+      var keyIsAlphanumeric = function (evt) {
+        var otherKeys = [ KEYS.TAB, KEYS.SPACE, KEYS.ALT, KEYS.CONTROL, KEYS.LEFT, KEYS.RIGHT ];
+        var key = evt.which;
+        return otherKeys.indexOf(key) === -1;
+      };
+
+      if (keyIsAlphanumeric(evt)) {
+        var val = String.fromCharCode(evt.which);
+        this.dropdown.$search.val(val);
+        this.trigger('query', {
+          term: val
+        });
+      }
+    });
+
     this.on('keypress', function (evt) {
       var key = evt.which;
 
       if (self.isOpen()) {
         if (key === KEYS.ENTER) {
           self.trigger('results:select');
-
+          evt.preventDefault();
+        } else if ((key === KEYS.TAB)) {
+          self.trigger('results:select');
           evt.preventDefault();
         } else if ((key === KEYS.SPACE && evt.ctrlKey)) {
           self.trigger('results:toggle');
@@ -5104,14 +5135,14 @@ S2.define('select2/core',[
           self.trigger('results:next');
 
           evt.preventDefault();
-        } else if (key === KEYS.ESC || key === KEYS.TAB) {
+                            } else if (key === KEYS.ESC) {
           self.close();
 
           evt.preventDefault();
         }
       } else {
-        if (key === KEYS.ENTER || key === KEYS.SPACE ||
-            ((key === KEYS.DOWN || key === KEYS.UP) && evt.altKey)) {
+
+        if (key === KEYS.ENTER || key === KEYS.SPACE || key === KEYS.DOWN || key === KEYS.UP) {
           self.open();
 
           evt.preventDefault();
@@ -5821,7 +5852,7 @@ S2.define('jquery.select2',[
   './select2/defaults'
 ], function ($, require, Select2, Defaults) {
   // Force jQuery.mousewheel to be loaded if it hasn't already
-  require('jquery.mousewheel');
+               // require('jquery.mousewheel');
 
   if ($.fn.select2 == null) {
     // All methods that should return the element
