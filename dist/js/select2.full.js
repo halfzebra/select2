@@ -5101,6 +5101,11 @@ S2.define('select2/core',[
       var keyIsAlphanumeric = function (evt) {
         var otherKeys = [ KEYS.TAB, KEYS.SPACE, KEYS.ALT, KEYS.CONTROL, KEYS.LEFT, KEYS.RIGHT ];
         var key = evt.which;
+
+        if (evt.which === 0 && evt.keyCode === 9) {
+          key = 9;
+        }
+
         return otherKeys.indexOf(key) === -1;
       };
 
